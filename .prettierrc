@@ -1,0 +1,10 @@
+{
+  "printWidth": 80,
+  "parser": "babylon",
+  "proseWrap": "preserve",
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "arrowParens": "always",
+  "trailingComma": "es5"
+}
