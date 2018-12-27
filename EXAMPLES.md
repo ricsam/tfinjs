@@ -47,17 +47,19 @@ const logGroupPrefix = `arn:aws:logs:${awsRegion}:${awsAccoundId}:log-group:/aws
 
 const petLambda = api.resource('aws_dynamodb_table', 'pets', {
   description: 'pet lambda',
+  /* api.reference registers a remote state on the petLambda resource and gets the terraform interpolation string to reference the arn of the remote state */
   role: api.reference(petLambdaExecRole, 'arn'),
+  /* function_name === s3_key here. api.versionedName is a helper that returns a callback that returns the versionedName of the petLambda resource */
   function_name: api.versionedName(),
+  s3_key: (resource) => resource.versionedName(),
   s3_bucket: 'pet-lambda-bucket',
-  s3_key: api.versionedName(),
   handler: 'service.handler',
   runtime: 'nodejs8.10',
   timeout: 20,
   memory_size: 512,
 });
 
-const petLambdaName = petLambda.getVersionedName();
+const petLambdaName = petLambda.versionedName();
 
 const cloudwatchPolicy = api.resource(
   'aws_iam_policy',

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "build": "webpack --entry=./index.js -p --progress --config=./webpack.config.js",
-    "_docs": "jsdoc -t ./node_modules/minami --recurse --destination ./docs --readme ./README.md src",
+    "jsdocs": "jsdoc -t ./node_modules/minami --recurse --destination ./jsdocs --readme ./README.md src",
     "docs": "docma && cp ./assets/favicon.ico ./docs",
     "docs:dev": "yarn run docs && docma serve"
   },

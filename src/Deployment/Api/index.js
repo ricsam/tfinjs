@@ -1,6 +1,10 @@
-import assertApiConstructorParams from '../assertions/assertApiConstructorParams';
+import assert from 'assert';
 import Resource from '../Resource';
 import requiredParam from '../../statics/requiredParam';
+import createTerraformStringInterpolation from '../statics/createTerraformStringInterpolation';
+import assertDeploymentParamsSignature from '../../assertions/assertDeploymentParamsSignature';
+import Deployment from '..';
+import Provider from '../Provider';
 
 /**
  *
@@ -8,27 +12,33 @@ import requiredParam from '../../statics/requiredParam';
  * @param {object} params - Function parameters
  * @param {deploymentParams} params.deploymentParams - Deployment params
  * @param {namespace} params.namespace - Namepsace
- * @param {addResource} params.addResource - Function which will add resource to the deployment instance
+ * @param {deployment} params.deployment - Deployment instance
+ * @param {provider} params.provider - Provider instance
  * @class Api
  */
 class Api {
   constructor({
     deploymentParams = requiredParam('deploymentParams'),
     namespace = requiredParam('namespace'),
-    addResource = requiredParam('addResource'),
+    deployment = requiredParam('deployment'),
+    provider = requiredParam('provider'),
   }) {
-    assertApiConstructorParams(
-      {
-        deploymentParams,
-        namespace,
-        addResource,
-      },
-      this.constructor,
+    assertDeploymentParamsSignature(deploymentParams, this.constructor);
+    assert(typeof namespace === 'string', 'namespace must be string');
+    assert(
+      deployment instanceof Deployment,
+      'deployment must be an instance of Deployment',
+    );
+    assert(
+      provider instanceof Provider,
+      'provider must be an instance of Provider',
     );
 
     this.deploymentParams = deploymentParams;
+
     this.namespace = namespace;
-    this.addResource = addResource;
+    this.deployment = deployment;
+    this.provider = provider;
   }
 
   /**
@@ -45,27 +55,18 @@ class Api {
     name = requiredParam('name'),
     body = requiredParam('body'),
   ) {
-    if (typeof type !== 'string') {
-      const error = new Error('type must be a string');
-      throw error;
-    }
-    if (typeof name !== 'string') {
-      const error = new Error('name must be a string');
-      throw error;
-    }
-    if (typeof body !== 'object') {
-      const error = new Error('body must be an object');
-      throw error;
-    }
+    assert(typeof type === 'string', 'type must be string');
+    assert(typeof name === 'string', 'name must be string');
+    assert(typeof body === 'object', 'namespace must be object');
+
     const resource = new Resource({
-      deploymentParams: this.deploymentParams,
-      namespace: this.namespace,
+      api: this,
       type,
       name,
       body,
     });
 
-    this.addResource(resource);
+    this.deployment.addResource(resource);
 
     return resource;
   }
@@ -74,18 +75,33 @@ class Api {
    * Exposed in the public API
    *
    * @static
-   * @returns versionedName
+   * @returns {function} resourceBodyCallback - will return the versioned name of the resource
    * @memberof Api
    */
   static versionedName() {
     return (resource = requiredParam('resource')) => {
-      if (!(resource instanceof Resource)) {
-        const error = new Error('resource must be a instance of Resource');
-        throw error;
-      }
+      assert(
+        resource instanceof Resource,
+        'resource must be an instance of Resource',
+      );
 
-      return resource.getVersionedName();
+      return resource.versionedName();
     };
+  }
+
+  /**
+   * Gets the id of the API.
+   * Is unique based on
+   * project, environment, version,
+   * provider id and the namespace.
+   *
+   * @returns {apiId} apiId - The Api id
+   * @memberof Api
+   */
+  getId() {
+    const { project, environment, version } = this.deploymentParams;
+    const id = `${project}/${environment}/${version}/${this.provider.getId()}/${this.namespace}`;
+    return id;
   }
 
   /**
@@ -94,24 +110,30 @@ class Api {
    * @static
    * @param {string} resource - resource
    * @param {string} key - Resource key to access
-   * @returns {function} resourceBodyCallback - will register the a remote state and return the HCL interpolation string. 
+   * @returns {function} resourceBodyCallback - will register the a remote state and return the HCL interpolation string.
    * @memberof Api
    */
   static reference(
     resource = requiredParam('resource'),
     key = requiredParam('key'),
   ) {
-    if (!(resource instanceof Resource) || typeof key !== 'string') {
-      const error = new Error(
-        'Invalid signature of the refenrece, resource must be instance of Resource and key must be a string',
-      );
-      throw error;
-    }
+    assert(
+      resource instanceof Resource,
+      'resource must be an instance of Resource',
+    );
+    assert(typeof key === 'string', 'key must be string');
 
     return (sourceResource = requiredParam('sourceResource')) => {
+      assert(
+        sourceResource instanceof Resource,
+        'sourceResource must be an instance of Resource',
+      );
       sourceResource.registerRemoteState(resource);
+      resource.addOutputKey(key);
 
-      return `data.terraform_remote_state.${resource.getVersionedName()}.${key}`;
+      return createTerraformStringInterpolation(
+        `data.terraform_remote_state.${resource.versionedName()}.${key}`,
+      );
     };
   }
 }

@@ -5,7 +5,6 @@ import requiredParam from '../statics/requiredParam';
 const signature = JSON.stringify(
   {
     project: 'string',
-    platform: 'string',
     environment: 'string',
     version: 'string',
   },
@@ -21,14 +20,13 @@ const assertDeploymentParamsSignature = (
     throwError('You must include deployment params', stacktraceFunction);
   }
   const {
-    project, environment, version, platform,
+    project, environment, version,
   } = deploymentParams;
 
   if (
     typeof project !== 'string'
     || typeof environment !== 'string'
     || typeof version !== 'string'
-    || typeof platform !== 'string'
   ) {
     throwError(
       `The deployment params ${JSON.stringify(
@@ -43,7 +41,6 @@ const assertDeploymentParamsSignature = (
     'project',
     'environment',
     'version',
-    'platform',
   ]);
 };
 

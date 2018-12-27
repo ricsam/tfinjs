@@ -1,16 +1,17 @@
-import assertApiConstructorParams from '../assertions/assertApiConstructorParams';
+import assert from 'assert';
 import resourceExistsInList from '../statics/resourceExistsInList';
 import JsToHcl from '../../JsToHcl';
 import requiredParam from '../../statics/requiredParam';
 import md5 from '../../statics/md5';
 import throwError from '../../statics/throwError';
+import createTerraformStringInterpolation from '../statics/createTerraformStringInterpolation';
+import Api from '../Api';
 
 /**
  * Creates an instance of Resource.
  *
  * @param {params} params - Function parameters
- * @param {deploymentParams} params.deploymentParams - Deployment params
- * @param {namespace} params.namespace - Namepsace
+ * @param {api} params.api - Api instance
  * @param {type} params.type - Resource type, e.g. aws_iam_role
  * @param {name} params.name - Resource name, some name for the resource
  * @param {body} params.body - Resource body, the terraform key value pairs
@@ -18,33 +19,20 @@ import throwError from '../../statics/throwError';
  */
 class Resource {
   constructor({
-    deploymentParams = requiredParam('deploymentParams'),
-    namespace = requiredParam('namespace'),
+    api = requiredParam('api'),
     type = requiredParam('type'),
     name = requiredParam('name'),
     body = requiredParam('body'),
   }) {
-    assertApiConstructorParams(
-      { deploymentParams, namespace },
-      this.constructor,
-    );
-
-    if (
-      typeof type !== 'string'
-      || typeof name !== 'string'
-      || typeof body !== 'object'
-    ) {
-      const error = new Error(
-        'Invalid signature of the resource params: type, name, body',
-      );
-      throw error;
-    }
+    assert(api instanceof Api, 'api must be an instance of Api');
+    assert(typeof type === 'string', 'type must be string');
+    assert(typeof name === 'string', 'name must be string');
+    assert(typeof body === 'object', 'name must be object');
 
     this.type = type;
     this.name = name;
 
-    this.deploymentParams = deploymentParams;
-    this.namespace = namespace;
+    this.api = api;
 
     this.body = this.parseValue(body);
   }
@@ -135,21 +123,17 @@ class Resource {
    * @returns {versionedName} versionedName - The versioned name
    * @memberof Resource
    */
-  getVersionedName() {
+  versionedName() {
     /* must depend on these 7 parameters */
-    const {
-      project, environment, version, platform,
-    } = this.deploymentParams;
-    const id = `${project}/${environment}/${version}/${platform}/${
-      this.namespace
-    }/${this.type}/${this.name}`;
+    const { project } = this.api.deploymentParams;
+    const id = `${this.api.getId()}/${this.type}/${this.name}`;
 
     const normalizeProjectName = project
-      .slice(0, 21)
+      .slice(0, 19)
       .replace(/\W/g, '')
       .toLowerCase();
 
-    const versionedName = `swt${normalizeProjectName}${md5(id).slice(0, 6)}`;
+    const versionedName = `tij${normalizeProjectName}${md5(id).slice(0, 8)}`;
     return versionedName;
   }
 
@@ -159,6 +143,13 @@ class Resource {
    * @memberof Resource
    */
   remoteStates = [];
+
+  /**
+   * List of outputs to add the the HCL file when deriving it for isolated deployment
+   *
+   * @memberof Resource
+   */
+  outputs = [];
 
   /**
    * Maybe (if it doesn't already exist) adds a resource to a list which will be converted to a remove data state in the HCL during HCL file generation
@@ -178,6 +169,15 @@ class Resource {
     }
   }
 
+  addOutputKey(key = requiredParam('key')) {
+    if (typeof key !== 'string') {
+      throwError('key must be a string');
+    }
+    if (!this.outputs.includes(key)) {
+      this.outputs.push(key);
+    }
+  }
+
   /**
    * Generates the HCL content of the resource (with remote states)
    *
@@ -192,22 +192,33 @@ class Resource {
 
     const remoteDataSourcesHcl = this.remoteStates
       .map((resource) => {
-        const versionedName = resource.getVersionedName();
-        const params = {
-          backend: 's3',
-          config: {
-            bucket: 'screed-terraform-state-2',
-            key: `${versionedName}.terraform.tfstate`,
-            region: 'eu-central-1',
-          },
-        };
-        const hcl = `data "terraform_remote_state" "${versionedName}" {${converter.stringify(
-          params,
-        )}}`;
-        return hcl;
+        const versionedName = resource.versionedName();
+        return resource.api.deployment.backend.getDataConfig(versionedName);
       })
       .join('\n');
-    return `${resourceHcl}\n${remoteDataSourcesHcl}`;
+
+    const outputs = this.outputs
+      .map(
+        (key) =>
+          `output "${key}" {${converter.stringify({
+            value: createTerraformStringInterpolation(
+              `${this.type}.${this.name}.${key}`,
+            ),
+          })}}`,
+      )
+      .join('\n');
+
+    const providerHcl = this.api.provider.getHcl();
+    const backendHcl = this.api.deployment.backend.getBackendHcl(
+      this.versionedName(),
+    );
+    return [
+      providerHcl,
+      backendHcl,
+      resourceHcl,
+      remoteDataSourcesHcl,
+      outputs,
+    ].join('\n');
   }
 }
 

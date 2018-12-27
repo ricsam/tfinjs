@@ -7,7 +7,7 @@ const isPrimitive = (val) =>
 const parsePrimitive = (val) => {
   switch (typeof val) {
     case 'string':
-      return `"${val}"`;
+      return val.match(/"/) ? `<<EOF\n${val}\nEOF` : `"${val}"`;
     case 'number':
       return val;
     case 'boolean':
@@ -45,8 +45,8 @@ class JsToHcl {
    * @memberof JsToHcl
    */
   parse = (value = requiredParam('value')) => {
-    if (typeof value === 'undefined' || value === null || Number.isNaN(value)) {
-      throwError('Value cannot be null, undefined or NaN', this.parseNonPrimitive);
+    if (['undefined', 'symbol', 'function'].includes(typeof value) || value === null || Number.isNaN(value)) {
+      throwError('Value cannot be null, undefined, NaN, symbol or function', this.parse);
     }
     if (isPrimitive(value)) {
       return parsePrimitive(value);
