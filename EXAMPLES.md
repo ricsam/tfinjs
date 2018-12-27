@@ -23,12 +23,10 @@ const deployment = new Deployment({
     }),
   }),
 });
-
 const awsAccoundId = '133713371337';
 const awsRegion = 'eu-north-1';
-
 /* the api is a collection of resources under
-    a certain namespace and deployment params. */
+   a certain namespace and deployment params. */
 const api = deployment.createApi({
   deploymentParams: {
     project: 'pet-shop',
@@ -47,7 +45,6 @@ const api = deployment.createApi({
     awsProviderId(awsAccoundId, awsRegion),
   ),
 });
-
 const petLambdaExecRole = api.resource('aws_iam_role', 'pets', {
   assume_role_policy: JSON.stringify({
     Version: '2012-10-17',
@@ -63,20 +60,18 @@ const petLambdaExecRole = api.resource('aws_iam_role', 'pets', {
     ],
   }),
 });
-
 const logGroupPrefix = `arn:aws:logs:${awsRegion}:${awsAccoundId}:log-group:/aws/lambda`;
-
 const petLambda = api.resource('aws_dynamodb_table', 'pets', {
   description: 'pet lambda',
   /* api.reference registers a remote state
-      on the petLambda resource and gets the
-      terraform interpolation string to reference
-      the arn of the remote state */
+     on the petLambda resource and gets the
+     terraform interpolation string to reference
+     the arn of the remote state */
   role: api.reference(petLambdaExecRole, 'arn'),
   /* function_name === s3_key here.
-      api.versionedName is a helper that
-      returns a callback that returns the
-      versionedName of the petLambda resource */
+     api.versionedName is a helper that
+     returns a callback that returns the
+     versionedName of the petLambda resource */
   function_name: api.versionedName(),
   s3_key: (resource) => resource.versionedName(),
   s3_bucket: 'pet-lambda-bucket',
@@ -85,9 +80,7 @@ const petLambda = api.resource('aws_dynamodb_table', 'pets', {
   timeout: 20,
   memory_size: 512,
 });
-
 const petLambdaName = petLambda.versionedName();
-
 const cloudwatchPolicy = api.resource(
   'aws_iam_policy',
   'cloudwatch_attachable_policy',
@@ -109,7 +102,6 @@ const cloudwatchPolicy = api.resource(
     }),
   },
 );
-
 api.resource(
   'aws_iam_role_policy_attachment',
   'cloud_watch_role_attachment',
