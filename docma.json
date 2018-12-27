@@ -1,0 +1,77 @@
+{
+  "src": [
+    "./src/**/*.js",
+    {
+      "guide": "./README.md"
+    },
+    {
+      "examples": "./EXAMPLES.md"
+    }
+  ],
+  "assets": {
+    "/": "./assets"
+  },
+  "dest": "./docs",
+  "app": {
+    "title": "tfinjs",
+    "entrance": "content:guide",
+    "base": "/",
+    "favicon": "./assets/favicon.ico"
+  },
+  "jsdoc": {
+    "recurse": true
+  },
+  "template": {
+    "path": "zebra",
+    "options": {
+      "title": {
+        "label": "tfinjs",
+        "href": "/"
+      },
+      "logo": {
+        "dark": "assets/logo.png"
+      },
+      "navbar": {
+        "enabled": true,
+        "menu": [
+          {
+            "label": "Home",
+            "iconClass": "fas fa-home",
+            "href": "/"
+          },
+          {
+            "label": "jsdocs",
+            "iconClass": "fas fa-book",
+            "href": "./?api"
+          },
+          {
+            "label": "Examples",
+            "iconClass": "fas fa-mouse-pointer",
+            "href": "?content=examples"
+          },
+          {
+            "label": "GitHub",
+            "iconClass": "fab fa-github",
+            "items": [
+              {
+                "label": "API",
+                "href": "https://github.com/ricsam/tfinjs"
+              },
+              {
+                "separator": true
+              },
+              {
+                "label": "CLI",
+                "href": "https://github.com/ricsam/tfinjs-cli"
+              }
+            ]
+          }
+        ]
+      },
+      "sidebar": {
+        "enabled": true,
+        "outline": "tree"
+      }
+    }
+  }
+}

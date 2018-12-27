@@ -30,9 +30,25 @@ import requiredParam from '../statics/requiredParam';
     });
   */
 
+/**
+ * Create collection of API instances and resources. All created resources are accessable in the instance of the Deployment.
+ *
+ * @class Deployment
+ */
 class Deployment {
+  /**
+   * Array of added resources
+   *
+   * @memberof Deployment
+   */
   resources = [];
 
+  /**
+   * Registers a new resource
+   *
+   * @param {resource} resource - The resource to be added
+   * @memberof Deployment
+   */
   addResource(resource = requiredParam('resource')) {
     if (resourceExistsInList(this.resources, resource)) {
       const error = new Error(
@@ -44,6 +60,15 @@ class Deployment {
     this.resources.push(resource);
   }
 
+  /**
+   * Creates a public api within a namespace and a set of deployment params
+   *
+   * @param {object} params - Function parameters
+   * @param {deploymentParams} params.deploymentParams - Deployment params
+   * @param {string} params.namespace - The namespace
+   * @returns publicApi - The public api
+   * @memberof Deployment
+   */
   createApi({
     deploymentParams = requiredParam('deploymentParams'),
     namespace = requiredParam('namespace'),
@@ -67,6 +92,12 @@ class Deployment {
     };
   }
 
+  /**
+   * Returns the HCL files for the deployment in an array.
+   *
+   * @returns {string[]} isolatedDeployments - Array of hcl files that should be deployed in isolation
+   * @memberof Deployment
+   */
   build() {
     return this.resources.map((resource) => resource.getHcl());
   }

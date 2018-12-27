@@ -5,13 +5,24 @@ import requiredParam from '../../statics/requiredParam';
 import md5 from '../../statics/md5';
 import throwError from '../../statics/throwError';
 
+/**
+ * Creates an instance of Resource.
+ *
+ * @param {params} params - Function parameters
+ * @param {deploymentParams} params.deploymentParams - Deployment params
+ * @param {namespace} params.namespace - Namepsace
+ * @param {type} params.type - Resource type, e.g. aws_iam_role
+ * @param {name} params.name - Resource name, some name for the resource
+ * @param {body} params.body - Resource body, the terraform key value pairs
+ * @class Resource
+ */
 class Resource {
   constructor({
     deploymentParams = requiredParam('deploymentParams'),
     namespace = requiredParam('namespace'),
     type = requiredParam('type'),
     name = requiredParam('name'),
-    params = requiredParam('params'),
+    body = requiredParam('body'),
   }) {
     assertApiConstructorParams(
       { deploymentParams, namespace },
@@ -21,10 +32,10 @@ class Resource {
     if (
       typeof type !== 'string'
       || typeof name !== 'string'
-      || typeof params !== 'object'
+      || typeof body !== 'object'
     ) {
       const error = new Error(
-        'Invalid signature of the resource params: type, name, params',
+        'Invalid signature of the resource params: type, name, body',
       );
       throw error;
     }
@@ -35,17 +46,47 @@ class Resource {
     this.deploymentParams = deploymentParams;
     this.namespace = namespace;
 
-
-    this.params = this.parseValue(params);
+    this.body = this.parseValue(body);
   }
 
-  getParams = () => this.params;
+  /**
+   * Gets the resource body
+   *
+   * @returns {body} body - Resource body
+   * @memberof Resource
+   */
+  getBody() {
+    return this.body;
+  }
 
-  getType = () => this.type;
+  /**
+   * Gets the resource type
+   *
+   * @returns {type} type - Resource type
+   * @memberof Resource
+   */
+  getType() {
+    return this.type;
+  }
 
-  getName = () => this.name;
+  /**
+   * Gets the resource name
+   *
+   * @returns {name} name - Resource name
+   * @memberof Resource
+   */
+  getName() {
+    return this.name;
+  }
 
-  parseValue = (params = requiredParam('params')) => {
+  /**
+   * Recursivly searches through the params for values of type function and then evaulates that function
+   *
+   * @param {params} params - params
+   * @returns {params} params - params
+   * @memberof Resource
+   */
+  parseValue(params = requiredParam('params')) {
     let result = params;
     if (typeof params === 'function') {
       result = params(this);
@@ -58,20 +99,42 @@ class Resource {
       throwError('Value cannot be null or undefined', this.parseValue);
     }
     return result;
-  };
+  }
 
-  mapObject = (params = requiredParam('params')) =>
-    Object.entries(params).reduce((c, [key, value]) => {
+  /**
+   * Parses each value in an object
+   *
+   * @param {params} params - params
+   * @returns {params} params - params
+   * @memberof Resource
+   */
+  mapObject(params = requiredParam('params')) {
+    return Object.entries(params).reduce((c, [key, value]) => {
       const result = this.parseValue(value);
       return {
         ...c,
         [key]: result,
       };
     }, {});
+  }
 
-  mapArray = (params = requiredParam('params')) =>
-    params.map((value) => this.parseValue(value));
+  /**
+   * Parses each value in an array
+   *
+   * @param {params} params - params
+   * @returns {params} params - params
+   * @memberof Resource
+   */
+  mapArray(params = requiredParam('params')) {
+    return params.map((value) => this.parseValue(value));
+  }
 
+  /**
+   * Create the versioned name which is derived from the 7 parametes: project, environment, version, platform, namespace, type and name
+   *
+   * @returns {versionedName} versionedName - The versioned name
+   * @memberof Resource
+   */
   getVersionedName() {
     /* must depend on these 7 parameters */
     const {
@@ -81,28 +144,51 @@ class Resource {
       this.namespace
     }/${this.type}/${this.name}`;
 
-    const normalizeProjectName = project.slice(0, 21).replace(/\W/g, '').toLowerCase();
+    const normalizeProjectName = project
+      .slice(0, 21)
+      .replace(/\W/g, '')
+      .toLowerCase();
 
     const versionedName = `swt${normalizeProjectName}${md5(id).slice(0, 6)}`;
     return versionedName;
-  };
+  }
 
+  /**
+   * List of remote states to add the the HCL file when deriving it for isolated deployment
+   *
+   * @memberof Resource
+   */
   remoteStates = [];
 
+  /**
+   * Maybe (if it doesn't already exist) adds a resource to a list which will be converted to a remove data state in the HCL during HCL file generation
+   *
+   * @param {string} resource - resource
+   * @memberof Resource
+   */
   registerRemoteState(resource = requiredParam('resource')) {
     if (!(resource instanceof Resource)) {
-      throwError('resource must be a instance of Resource', this.registerRemoteState);
+      throwError(
+        'resource must be a instance of Resource',
+        this.registerRemoteState,
+      );
     }
     if (!resourceExistsInList(this.remoteStates, resource)) {
       this.remoteStates.push(resource);
     }
   }
 
+  /**
+   * Generates the HCL content of the resource (with remote states)
+   *
+   * @returns {hcl} hcl - hcl
+   * @memberof Resource
+   */
   getHcl() {
     const converter = new JsToHcl();
     const resourceHcl = `resource "${this.type}" "${
       this.name
-    }" ${converter.stringify(this.params)}`;
+    }" {${converter.stringify(this.body)}}`;
 
     const remoteDataSourcesHcl = this.remoteStates
       .map((resource) => {
@@ -115,9 +201,9 @@ class Resource {
             region: 'eu-central-1',
           },
         };
-        const hcl = `data "terraform_remote_state" "${versionedName}" ${converter.stringify(
+        const hcl = `data "terraform_remote_state" "${versionedName}" {${converter.stringify(
           params,
-        )}`;
+        )}}`;
         return hcl;
       })
       .join('\n');
