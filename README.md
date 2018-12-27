@@ -23,14 +23,8 @@ Use a scripting language to generate resources with a greater degree of configur
 ## Installation
 ### CLI
 ```bash
-npm install tfinjs-cli
+npm install tfinjs tfinjs-cli
 ```
-
-### node API only
-```bash
-npm install tfinjs
-```
-
 
 ## Examples
 See EXAMPLES.md
