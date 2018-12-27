@@ -67,9 +67,9 @@ class JsToHcl {
   /**
    * Creates key value pair in hcl
    *
-   * @param {array} params [
-   * @param {string} params[0] - key
-   * @param {string} params[0] - value
+   * @param {array} params
+   * @param {string} params.0 - key
+   * @param {string} params.1 - value
    * @returns hcl
    */
   createHclKeyVal = ([

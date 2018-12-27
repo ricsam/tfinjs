@@ -8,7 +8,7 @@
     "build": "webpack --entry=./index.js -p --progress --config=./webpack.config.js",
     "jsdocs": "jsdoc -t ./node_modules/minami --recurse --destination ./jsdocs --readme ./README.md src",
     "docs": "docma && cp ./assets/favicon.ico ./docs",
-    "docs:dev": "yarn run docs && docma serve"
+    "docs:preview": "yarn run docs && docma serve"
   },
   "bin": {
     "tfinjs": "./dist/index.js"

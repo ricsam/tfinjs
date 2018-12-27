@@ -124,6 +124,4 @@ test('The lambda deployment example test', async () => {
       );
     }),
   );
-  //  .map((hclFile) => hcl2js.toJSON(hclFile));
-  // console.log(result);
 });

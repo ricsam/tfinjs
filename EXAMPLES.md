@@ -9,8 +9,20 @@ Examples
 
 ## Lambda deployment
 ```javascript
-// the deployment will host ALL of the resources
-const deployment = new Deployment();
+const deployment = new Deployment({
+  backend: new Backend('s3', {
+    backendConfig: (versionedName) => ({
+      bucket: 'terraform-state-prod',
+      key: `${versionedName}.terraform.tfstate`,
+      region: 'us-east-1',
+    }),
+    dataConfig: (versionedName) => ({
+      bucket: 'terraform-state-prod',
+      key: `${versionedName}.terraform.tfstate`,
+      region: 'us-east-1',
+    }),
+  }),
+});
 
 const awsAccoundId = '133713371337';
 const awsRegion = 'eu-north-1';
@@ -21,9 +33,18 @@ const api = deployment.createApi({
     project: 'pet-shop',
     environment: 'stage',
     version: 'v1',
-    platform: `aws/${awsAccoundId}/${awsRegion}`,
   },
   namespace: 'services/lambdas/add-pet',
+  provider: new Provider(
+    'aws',
+    {
+      region: awsRegion,
+      assume_role: {
+        role_arn: `arn:aws:iam::${awsAccoundId}:role/DeploymentRole`,
+      },
+    },
+    awsProviderId(awsAccoundId, awsRegion),
+  ),
 });
 
 const petLambdaExecRole = api.resource('aws_iam_role', 'pets', {
@@ -43,7 +64,6 @@ const petLambdaExecRole = api.resource('aws_iam_role', 'pets', {
 });
 
 const logGroupPrefix = `arn:aws:logs:${awsRegion}:${awsAccoundId}:log-group:/aws/lambda`;
-
 
 const petLambda = api.resource('aws_dynamodb_table', 'pets', {
   description: 'pet lambda',
@@ -71,23 +91,25 @@ const cloudwatchPolicy = api.resource(
         {
           Action: ['logs:CreateLogStream'],
           Effect: 'Allow',
-          Resource:
-            `${logGroupPrefix}/${petLambdaName}:*`,
+          Resource: `${logGroupPrefix}/${petLambdaName}:*`,
         },
         {
           Action: ['logs:PutLogEvents'],
           Effect: 'Allow',
-          Resource:
-            `${logGroupPrefix}/${petLambdaName}:*:*`,
+          Resource: `${logGroupPrefix}/${petLambdaName}:*:*`,
         },
       ],
     }),
   },
 );
 
-api.resource('aws_iam_role_policy_attachment', 'cloud_watch_role_attachment', {
-  role: api.reference(petLambdaExecRole, 'name'),
-  policy_arn: api.reference(cloudwatchPolicy, 'arn'),
-});
+api.resource(
+  'aws_iam_role_policy_attachment',
+  'cloud_watch_role_attachment',
+  {
+    role: api.reference(petLambdaExecRole, 'name'),
+    policy_arn: api.reference(cloudwatchPolicy, 'arn'),
+  },
+);
 
 ```
