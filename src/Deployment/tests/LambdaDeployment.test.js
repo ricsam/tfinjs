@@ -122,7 +122,8 @@ test('The lambda deployment example test', async () => {
   );
 
   await Promise.all(
-    deployment.build().map(async (hcl, index) => {
+    deployment.getResources().map(async (resource, index) => {
+      const hcl = resource.getHcl();
       const prettyHcl = await hclPrettify(hcl);
       snapshot(
         join(__dirname, 'LambdaDeployment.test.out', `${index}.tf`),

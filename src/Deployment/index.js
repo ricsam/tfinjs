@@ -92,13 +92,13 @@ class Deployment {
   }
 
   /**
-   * Returns the HCL files for the deployment in an array.
+   * Gets the resources of the deployment
    *
-   * @returns {string[]} isolatedDeployments - Array of hcl files that should be deployed in isolation
+   * @returns {resources[]} resources - array of resources
    * @memberof Deployment
    */
-  build() {
-    return this.resources.map((resource) => resource.getHcl());
+  getResources() {
+    return this.resources;
   }
 }
 

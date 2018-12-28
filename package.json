@@ -1,11 +1,11 @@
 {
   "name": "tfinjs",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "description": "",
-  "main": "./dist/index.js",
+  "main": "./main/index.js",
   "scripts": {
     "test": "jest",
-    "build": "webpack --entry=./index.js -p --progress --config=./webpack.config.js",
+    "build": "webpack -p --progress --config=./webpack.config.js",
     "jsdocs": "jsdoc -t ./node_modules/minami --recurse --destination ./jsdocs --readme ./README.md src",
     "docs": "docma && cp ./assets/favicon.ico ./docs",
     "docs:preview": "yarn run docs && docma serve",

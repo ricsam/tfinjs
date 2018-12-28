@@ -3,10 +3,14 @@ const { resolve } = require('path');
 const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
+  entry: {
+    main: './exports/main.js',
+    utils: './exports/utils.js',
+    'ids/aws': './src/Deployment/Provider/ids/aws.js',
+  },
   output: {
-    path: resolve(__dirname, 'dist'),
-    filename: 'tfinjs.js',
-    library: 'tfinjs',
+    filename: '[name]/index.js',
+    path: __dirname,
     libraryExport: 'default',
     libraryTarget: 'commonjs2',
   },
@@ -23,4 +27,5 @@ module.exports = {
       },
     ],
   },
+  target: 'node',
 };
