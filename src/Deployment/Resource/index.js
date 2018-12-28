@@ -126,15 +126,26 @@ class Resource {
   versionedName() {
     /* must depend on these 7 parameters */
     const { project } = this.api.deploymentParams;
-    const id = `${this.api.getId()}/${this.type}/${this.name}`;
+    const uri = this.getUri();
 
     const normalizeProjectName = project
       .slice(0, 19)
       .replace(/\W/g, '')
       .toLowerCase();
 
-    const versionedName = `tij${normalizeProjectName}${md5(id).slice(0, 8)}`;
+    const versionedName = `tij${normalizeProjectName}${md5(uri).slice(0, 8)}`;
     return versionedName;
+  }
+
+  /**
+   * Returns the resource uri. This consists of the api uri and the resource type and name.
+   *
+   * @returns
+   * @memberof Resource
+   */
+  getUri() {
+    const uri = `${this.api.getUri()}/${this.type}/${this.name}`;
+    return uri;
   }
 
   /**

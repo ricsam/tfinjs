@@ -90,18 +90,18 @@ class Api {
   }
 
   /**
-   * Gets the id of the API.
+   * Gets the uri of the API.
    * Is unique based on
    * project, environment, version,
-   * provider id and the namespace.
+   * providerUri and the namespace.
    *
-   * @returns {apiId} apiId - The Api id
+   * @returns {apiUri} apiUri - The Api uri
    * @memberof Api
    */
-  getId() {
+  getUri() {
     const { project, environment, version } = this.deploymentParams;
-    const id = `${project}/${environment}/${version}/${this.provider.getId()}/${this.namespace}`;
-    return id;
+    const uri = `${project}/${environment}/${version}/${this.provider.getUri()}/${this.namespace}`;
+    return uri;
   }
 
   /**

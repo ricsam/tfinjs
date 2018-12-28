@@ -7,7 +7,7 @@ import snapshot from '../../testUtils/snapshot';
 import Provider from '../Provider';
 import Backend from '../Backend';
 
-const awsProviderId = (accountId, region) => `aws/${accountId}/${region}`;
+const awsProviderUri = (accountId, region) => `aws/${accountId}/${region}`;
 
 /* eslint-env jest */
 test('The lambda deployment example test', async () => {
@@ -46,7 +46,7 @@ test('The lambda deployment example test', async () => {
           role_arn: `arn:aws:iam::${awsAccoundId}:role/DeploymentRole`,
         },
       },
-      awsProviderId(awsAccoundId, awsRegion),
+      awsProviderUri(awsAccoundId, awsRegion),
     ),
   });
 

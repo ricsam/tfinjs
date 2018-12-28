@@ -6,7 +6,7 @@ module.exports = {
   entry: {
     main: './exports/main.js',
     utils: './exports/utils.js',
-    'ids/aws': './src/Deployment/Provider/ids/aws.js',
+    'uris/aws': './src/Deployment/Provider/uris/aws.js',
   },
   output: {
     filename: '[name]/index.js',

@@ -5,24 +5,24 @@ import JsToHcl from '../../JsToHcl';
  *
  * @param {string} provider name
  * @param {object} body of the provider config
- * @param {providerId} providerId
+ * @param {providerUri} providerUri
  * @class Provider
  */
 class Provider {
-  constructor(provider, body, id) {
+  constructor(provider, body, uri) {
     this.provider = provider;
     this.body = body;
-    this.id = id;
+    this.uri = uri;
   }
 
   /**
-   * Get the providerId
+   * Get the providerUri
    *
-   * @returns {providerId} providerId
+   * @returns {providerUri} providerUri
    * @memberof Provider
    */
-  getId() {
-    return this.id;
+  getUri() {
+    return this.uri;
   }
 
   /**
