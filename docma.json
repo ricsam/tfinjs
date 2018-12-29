@@ -29,7 +29,7 @@
         "href": "/"
       },
       "logo": {
-        "dark": "assets/logo.png"
+        "dark": "assets/logo-clean.png"
       },
       "navbar": {
         "enabled": true,
