@@ -1,9 +1,8 @@
 /* eslint-env jest */
-import { writeFileSync, readFileSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
 
 const snapshot = (outFile, content, newSnapshot) => {
-
-  if (newSnapshot) {
+  if (newSnapshot || !existsSync(outFile)) {
     writeFileSync(outFile, content);
   }
 

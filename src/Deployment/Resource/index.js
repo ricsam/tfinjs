@@ -140,7 +140,7 @@ class Resource {
   /**
    * Returns the resource uri. This consists of the api uri and the resource type and name.
    *
-   * @returns
+   * @returns {string} uri
    * @memberof Resource
    */
   getUri() {

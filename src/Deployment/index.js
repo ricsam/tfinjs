@@ -20,6 +20,26 @@ class Deployment {
       'backend must be an instance of Backend',
     );
     this.backend = backend;
+    if (this.backend.shouldCreateBackend()) {
+      /* create dummy deployment and api where the backend can be created */
+      const deployment = new Deployment({
+        backend: new Backend(null),
+      });
+      const api = deployment.createApi({
+        deploymentParams: {
+          project: '_',
+          environment: '_',
+          version: '_',
+        },
+        namespace: '_',
+        provider: this.backend.getProvider(),
+      });
+      const create = this.backend.getCreate();
+      create(api.resource.bind(api));
+      this.resources = [
+        ...deployment.resources,
+      ];
+    }
   }
 
   /**

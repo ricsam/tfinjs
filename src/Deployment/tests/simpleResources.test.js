@@ -1,37 +1,63 @@
-import Deployment from '..';
-import hcl2js from 'hcl2js';
-import { writeFileSync } from 'fs';
+/* eslint-env jest */
 import { join } from 'path';
-import hclPrettify from '../../statics/hclPrettify';
-import snapshot from '../../testUtils/snapshot';
+import awsProviderUri from '../Provider/uris/aws';
 import Provider from '../Provider';
+import Deployment from '..';
 import Backend from '../Backend';
 import saveDeployment from './saveDeployment';
 
-const awsProviderUri = (accountId, region) => `aws/${accountId}/${region}`;
+test('simpleResources', async () => {
+  const awsAccoundId = 13371337;
+  const awsRegion = 'eu-north-1';
 
-/* eslint-env jest */
-test('The lambda deployment example test', async () => {
+  const provider = new Provider(
+    'aws',
+    {
+      region: awsRegion,
+      assume_role: {
+        role_arn: `arn:aws:iam::${awsAccoundId}:role/DeploymentRole`,
+      },
+    },
+    awsProviderUri(awsAccoundId, awsRegion),
+  );
+
+  const backendBucketName = 'terraform-state-prod';
+  const backendBucketRegion = 'us-east-1';
+
   const deployment = new Deployment({
     backend: new Backend('s3', {
       backendConfig: (versionedName) => ({
-        bucket: 'terraform-state-prod',
+        bucket: backendBucketName,
         key: `${versionedName}.terraform.tfstate`,
-        region: 'us-east-1',
+        region: backendBucketRegion,
       }),
       dataConfig: (versionedName) => ({
-        bucket: 'terraform-state-prod',
+        bucket: backendBucketName,
         key: `${versionedName}.terraform.tfstate`,
-        region: 'us-east-1',
+        region: backendBucketRegion,
       }),
+      provider: new Provider(
+        'aws',
+        {
+          region: backendBucketRegion,
+          assume_role: {
+            role_arn: `arn:aws:iam::${awsAccoundId}:role/DeploymentRole`,
+          },
+        },
+        awsProviderUri(awsAccoundId, backendBucketRegion),
+      ),
+      create: (resource) =>
+        resource('aws_s3_bucket', 'terraform_state_prod', {
+          bucket: backendBucketName,
+          acl: 'private',
+          versioning: {
+            enabled: true,
+          },
+        }),
     }),
   });
-
-  const awsAccoundId = '133713371337';
-  const awsRegion = 'eu-north-1';
-
   /* the api is a collection of resources under
-     a certain namespace and deployment params. */
+   a certain namespace and deployment params. */
   const api = deployment.createApi({
     deploymentParams: {
       project: 'pet-shop',
@@ -39,18 +65,8 @@ test('The lambda deployment example test', async () => {
       version: 'v1',
     },
     namespace: 'services/lambdas/add-pet',
-    provider: new Provider(
-      'aws',
-      {
-        region: awsRegion,
-        assume_role: {
-          role_arn: `arn:aws:iam::${awsAccoundId}:role/DeploymentRole`,
-        },
-      },
-      awsProviderUri(awsAccoundId, awsRegion),
-    ),
+    provider,
   });
-
   const petLambdaExecRole = api.resource('aws_iam_role', 'pets', {
     assume_role_policy: JSON.stringify({
       Version: '2012-10-17',
@@ -66,31 +82,19 @@ test('The lambda deployment example test', async () => {
       ],
     }),
   });
-
   const logGroupPrefix = `arn:aws:logs:${awsRegion}:${awsAccoundId}:log-group:/aws/lambda`;
-
   const petLambda = api.resource('aws_dynamodb_table', 'pets', {
     description: 'pet lambda',
-    /* api.reference registers a remote state
-       on the petLambda resource and gets the
-       terraform interpolation string to reference
-       the arn of the remote state */
     role: api.reference(petLambdaExecRole, 'arn'),
-    /* function_name === s3_key here.
-       api.versionedName is a helper that
-       returns a callback that returns the
-       versionedName of the petLambda resource */
     function_name: api.versionedName(),
-    s3_key: (resource) => resource.versionedName(),
+    s3_key: api.versionedName(),
     s3_bucket: 'pet-lambda-bucket',
     handler: 'service.handler',
     runtime: 'nodejs8.10',
     timeout: 20,
     memory_size: 512,
   });
-
   const petLambdaName = petLambda.versionedName();
-
   const cloudwatchPolicy = api.resource(
     'aws_iam_policy',
     'cloudwatch_attachable_policy',
@@ -112,7 +116,6 @@ test('The lambda deployment example test', async () => {
       }),
     },
   );
-
   api.resource(
     'aws_iam_role_policy_attachment',
     'cloud_watch_role_attachment',
@@ -121,6 +124,5 @@ test('The lambda deployment example test', async () => {
       policy_arn: api.reference(cloudwatchPolicy, 'arn'),
     },
   );
-
-  await saveDeployment(deployment, join(__dirname, 'LambdaDeployment.test.out'));
+  await saveDeployment(deployment, join(__dirname, 'simpleResources.test.out'));
 });
