@@ -9,7 +9,7 @@
     "jsdocs": "jsdoc -t ./node_modules/minami --recurse --destination ./jsdocs --readme ./README.md src",
     "docs": "docma && cp ./assets/favicon.ico ./docs",
     "docs:preview": "yarn run docs && docma serve",
-    "prepublish": "yarn run build"
+    "prepublishOnly": "yarn run build"
   },
   "repository": {
     "type": "git",
