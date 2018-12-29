@@ -130,7 +130,7 @@ class Resource {
 
     const normalizeProjectName = project
       .slice(0, 19)
-      .replace(/\W/g, '')
+      .replace(/[^A-Za-z0-9]/g, '')
       .toLowerCase();
 
     const versionedName = `tij${normalizeProjectName}${md5(uri).slice(0, 8)}`;
