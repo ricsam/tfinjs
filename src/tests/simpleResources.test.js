@@ -10,23 +10,21 @@ import DeploymentConfig from '../DeploymentConfig';
 import Resource from '../Resource';
 import { reference, versionedName } from '../helpers';
 
-xtest('simpleResources', async () => {
+test('simpleResources', async () => {
   const awsAccoundId = 13371337;
   const awsRegion = 'eu-north-1';
   const backendBucketName = 'terraform-state-prod';
   const backendBucketRegion = 'us-east-1';
 
-  const project = new Project('pet-shop');
-
   const backend = new Backend('s3', {
-    backendConfig: (versionedName) => ({
+    backendConfig: (name) => ({
       bucket: backendBucketName,
-      key: `${versionedName}.terraform.tfstate`,
+      key: `${name}.terraform.tfstate`,
       region: backendBucketRegion,
     }),
-    dataConfig: (versionedName) => ({
+    dataConfig: (name) => ({
       bucket: backendBucketName,
-      key: `${versionedName}.terraform.tfstate`,
+      key: `${name}.terraform.tfstate`,
       region: backendBucketRegion,
     }),
     provider: new Provider(
@@ -48,6 +46,8 @@ xtest('simpleResources', async () => {
         },
       }),
   });
+
+  const project = new Project('pet-shop', backend);
 
   const provider = new Provider(
     'aws',
