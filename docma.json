@@ -2,10 +2,13 @@
   "src": [
     "./src/**/*.js",
     {
-      "guide": "./README.md"
+      "readme": "./README.md"
     },
     {
       "examples": "./EXAMPLES.md"
+    },
+    {
+      "guide": "./GUIDE.md"
     }
   ],
   "assets": {
@@ -14,7 +17,7 @@
   "dest": "./docs",
   "app": {
     "title": "tfinjs",
-    "entrance": "content:guide",
+    "entrance": "content:readme",
     "base": "/",
     "favicon": "./assets/favicon.ico"
   },
@@ -43,6 +46,11 @@
             "label": "jsdocs",
             "iconClass": "fas fa-book",
             "href": "./?api"
+          },
+          {
+            "label": "Guide",
+            "iconClass": "fas fa-info-circle",
+            "href": "?content=guide"
           },
           {
             "label": "Examples",
