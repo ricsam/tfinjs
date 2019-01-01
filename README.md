@@ -1,6 +1,8 @@
 Terraform in JavaScript
 =======================
 
+**Note:** The project is in beta and will undergo major changes before a stable release (version 1.0.0).
+
 
 ## Table of Contents
 * [Intro](#intro)
